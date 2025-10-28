@@ -1,0 +1,109 @@
+library IEEE;
+use IEEE.std_logic_1164.all;
+use std.textio.all;
+
+entity tb_Flag_Register is
+end tb_Flag_Register;
+
+architecture Test_Logic of tb_Flag_Register is
+
+    component Flag_Register
+        port (
+            clk     : in std_logic;
+            rst     : in std_logic;
+            set_ZF  : in std_logic;
+            set_CF  : in std_logic;
+            set_SF  : in std_logic;
+            set_PF  : in std_logic;
+            set_IF  : in std_logic;
+            set_DF  : in std_logic;
+            set_OF  : in std_logic;
+            R_FLAGS : out std_logic_vector(6 downto 0)
+        );
+    end component;
+
+    signal CLK_TB  : std_logic := '0';
+    signal RST_TB  : std_logic := '0';
+    signal SET_ZF_TB  : std_logic := '0';
+    signal SET_CF_TB  : std_logic := '0';
+    signal SET_SF_TB  : std_logic := '0';
+    signal SET_PF_TB  : std_logic := '0';
+    signal SET_IF_TB  : std_logic := '0';
+    signal SET_DF_TB  : std_logic := '0';
+    signal SET_OF_TB  : std_logic := '0';
+    signal R_FLAGS_TB : std_logic_vector(6 downto 0);
+
+    constant CLK_PERIOD : time := 10 ns;
+
+begin
+
+    -- Instancia DUT
+    DUT: Flag_Register
+        port map (
+            clk     => CLK_TB,
+            rst     => RST_TB,
+            set_ZF  => SET_ZF_TB,
+            set_CF  => SET_CF_TB,
+            set_SF  => SET_SF_TB,
+            set_PF  => SET_PF_TB,
+            set_IF  => SET_IF_TB,
+            set_DF  => SET_DF_TB,
+            set_OF  => SET_OF_TB,
+            R_FLAGS => R_FLAGS_TB
+        );
+
+    -- Clock finito %%%%%%%%%%%%%%%%
+    CLK_GEN: process
+    begin
+        for i in 1 to 50 loop
+            CLK_TB <= '0';
+            wait for CLK_PERIOD / 2;
+            CLK_TB <= '1';
+            wait for CLK_PERIOD / 2;
+        end loop;
+        wait;
+    end process;
+
+    -- Vetores de teste
+    TEST_VECTORS: process
+    begin
+        report "--- INICIANDO SIMULACAO ---" severity note;
+
+        -- Reset
+        report "Ciclo 1: Ativando Reset..." severity note;
+        RST_TB <= '1';
+        wait for CLK_PERIOD;
+        RST_TB <= '0';
+
+        assert R_FLAGS_TB = "0000000"
+        report "FALHA: Reset não zerou flags" severity error;
+
+        -- ZF e CF
+        SET_ZF_TB <= '1';
+        SET_CF_TB <= '1';
+        wait for CLK_PERIOD;
+
+        assert R_FLAGS_TB = "1100000"
+        report "FALHA: ZF/CF incorretos" severity error;
+
+        -- SF, PF, OF
+        SET_ZF_TB <= '0'; SET_CF_TB <= '0';
+        SET_SF_TB <= '1'; SET_PF_TB <= '1'; SET_OF_TB <= '1';
+        wait for CLK_PERIOD;
+
+        assert R_FLAGS_TB = "0011001"
+        report "FALHA: SF/PF/OF incorretos" severity error;
+
+        -- IF e DF
+        SET_SF_TB <= '0'; SET_PF_TB <= '0'; SET_OF_TB <= '0';
+        SET_IF_TB <= '1'; SET_DF_TB <= '1';
+        wait for CLK_PERIOD;
+
+        assert R_FLAGS_TB = "0000110"
+        report "FALHA: IF/DF incorretos" severity error;
+
+        report "--- SIMULACAO CONCLUIDA ---" severity note;
+        wait;
+    end process;
+
+end Test_Logic;
