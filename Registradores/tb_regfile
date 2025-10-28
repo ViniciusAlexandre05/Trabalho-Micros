@@ -1,0 +1,71 @@
+library IEEE;
+use IEEE.std_logic_1164.all;
+use IEEE.numeric_std.all;
+
+entity testbench is
+end testbench;
+
+architecture tb of testbench is
+    -- sinais do DUT
+    signal clk  : std_logic := '0';
+    signal rst  : std_logic := '0';
+    signal we   : std_logic := '0';
+    signal addr : unsigned(1 downto 0) := (others => '0');
+    signal data : std_logic_vector(7 downto 0) := (others => '0');
+    signal q_0, q_1, q_2, q_3 : std_logic_vector(7 downto 0);
+
+    constant CLK_PERIOD : time := 10 ns;
+begin
+      -- Instancia DUT
+      uut: entity work.regfile
+          port map (
+              clk  => clk,
+              rst  => rst,
+              we   => we,
+              addr => addr,
+              data => data,
+              q_0  => q_0,
+              q_1  => q_1,
+              q_2  => q_2,
+              q_3  => q_3
+          );
+
+      -- Clock infinito
+      clk_proc: process
+begin
+    for i in 1 to 50 loop
+        clk <= '0'; wait for CLK_PERIOD/2;
+        clk <= '1'; wait for CLK_PERIOD/2;
+    end loop;
+    wait; -- para o processo
+end process;
+
+    -- Processo de teste
+    test_proc: process
+    begin
+        report "--- INICIANDO SIMULACAO ---" severity note;
+
+        -- Reset síncrono
+        rst <= '1'; wait for CLK_PERIOD;
+        rst <= '0'; wait for CLK_PERIOD;
+
+        assert q_0 = x"00" and q_1 = x"00" and q_2 = x"00" and q_3 = x"00"
+        report "FALHA: Reset não zerou os registradores" severity error;
+
+        we <= '1'; addr <= "00"; data <= x"AA"; wait for CLK_PERIOD;
+        addr <= "01"; data <= x"55"; wait for CLK_PERIOD;
+        addr <= "10"; data <= x"FF"; wait for CLK_PERIOD;
+        addr <= "11"; data <= x"11"; wait for CLK_PERIOD;
+
+        we <= '0'; wait for CLK_PERIOD;
+
+        assert q_0 = x"AA" report "FALHA: q_0 incorreto" severity error;
+        assert q_1 = x"55" report "FALHA: q_1 incorreto" severity error;
+        assert q_2 = x"FF" report "FALHA: q_2 incorreto" severity error;
+        assert q_3 = x"11" report "FALHA: q_3 incorreto" severity error;
+
+        report "--- SIMULACAO CONCLUIDA ---" severity note;
+        wait;
+    end process;
+
+end tb;
