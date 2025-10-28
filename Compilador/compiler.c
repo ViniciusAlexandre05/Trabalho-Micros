@@ -8,13 +8,14 @@ FILE* binaryFile; // Arquivo binario onde sera escrito
 
 // Tabela de opcodes
 typedef struct {
+    char* mnemonic;
     char* opcode;
-    char* binary;
-    int  parNumber;
+    int  nParameters;
 } Table1; 
 
 Table1 opcodes[] = { // TODO ia implementar uma tabela pra ficar mais facil adicionar mais comandos e dps fz a tabela de registradores.
-    {"MOV", "00000001", 2},
+    {"MOV", "0001", 2},
+    {"MOV2", "0031", 2},
     {"End", "", 0} // So pra saber quando essa porra terminou
 };
 // Funcoes ----
@@ -43,26 +44,35 @@ int compileLine(char* line, int lineNumber){
     // Separa a instrucao do resto da linha e passa para a funcao de conversao com as caracteristicas daquela instrucao
     char* mnemonic = strtok(line, " ");
     int nParameters;
-    char* binary;
+    char* opcode;
     
-    // int i = 0;
-    // while(i != -1){
+    int i = 0;
+    while(i != -1){ // Faz busca para cada opcode na tabela
+        if(strcmp(mnemonic, opcodes[i].mnemonic) == 0){ // Caso encontre o mnemonico
+            nParameters = opcodes[i].nParameters;
+            opcode = opcodes[i].opcode;
+            char* parameters[nParameters];
+            i = -2; // Quebra do while
+            
+            // Preenche o array dos parametros separando o que sobrou da linha utilizando "," como delimitador
+            for (int j=0; j<nParameters; j++){
+                parameters[j] = strtok(NULL, ","); 
+            }
+            if((strtok(NULL, ",") != NULL) || (parameters[nParameters-1] == NULL)){ // Gera erro caso o numero de parametros esteja errado
+                printf("Erro nos parametros!. Linha %i\n", lineNumber);
+                error = 1;
+            }
+            //
+            fwrite(opcode, sizeof(char), strlen(opcode), binaryFile);
+            fwrite("\n", sizeof(char), 1, binaryFile); //Faz a quebra de linha
 
-    // }
-    // Definicao do binario e numero de parametros
-    if (strcmp(mnemonic, "MOV") == 0){
-        nParameters = 2;
-        binary = "00000000";
-        if(convertMnemonic(binary, nParameters)){ // Converte a linha e em caso de erro retorna 1;
+        }else if(strcmp(opcodes[i].opcode, "End") == 0){ // Caso nao encontre o mnemonico
+            printf("Erro ao ler mnemonico!. Linha %i: \"%s\" \n",lineNumber, mnemonic);
+            i = -2; // Quebra do while
             error = 1;
-            printf("Erro nos parametros!. Linha %i\n", lineNumber);
         }
+        i++;
     }
-    else {
-        printf("Erro ao ler mnemonico!. Linha %i: \"%s\" \n",lineNumber, mnemonic);
-        error = 1;
-    }
-
     return 0;
 }
 

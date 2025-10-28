@@ -1,2 +1,3 @@
 MOV 1,2 ;DjegJhonsons
-MOV 1,2
+MOV2 1,2
+;uhuhuhhu
