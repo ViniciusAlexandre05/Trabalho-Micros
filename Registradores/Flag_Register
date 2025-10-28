@@ -1,0 +1,36 @@
+  library IEEE;
+use IEEE.std_logic_1164.all;
+
+entity Flag_Register is
+    port (
+        clk     : in  std_logic;             -- Clock (síncrono)
+        rst     : in  std_logic;             -- Reset síncrono
+        set_ZF  : in  std_logic;             -- Zero Flag
+        set_CF  : in  std_logic;             -- Carry Flag
+        set_SF  : in  std_logic;             -- Sign Flag
+        set_PF  : in  std_logic;             -- Parity Flag
+        set_IF  : in  std_logic;             -- Interrupt Flag
+        set_DF  : in  std_logic;             -- Direction Flag
+        set_OF  : in  std_logic;             -- Overflow Flag
+        R_FLAGS : out std_logic_vector(6 downto 0) -- Saída do registrador
+    );
+end Flag_Register;
+
+architecture Behavioral of Flag_Register is
+    signal flags_s : std_logic_vector(6 downto 0) := (others => '0');
+begin
+    process(clk)
+    begin
+        if rising_edge(clk) then
+            if rst = '1' then
+                flags_s <= (others => '0');  -- Reset dos flags
+            else
+                -- Atualiza todos os flags de uma vez
+                flags_s <= set_ZF & set_CF & set_SF & set_PF & set_IF & set_DF & set_OF;
+            end if;
+        end if;
+    end process;
+
+    -- Passa os flags para a saída
+    R_FLAGS <= flags_s;
+end Behavioral;
