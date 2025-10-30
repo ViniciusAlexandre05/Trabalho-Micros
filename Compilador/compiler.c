@@ -14,26 +14,10 @@ typedef struct {
 } Table1; 
 
 Table1 opcodes[] = { // TODO ia implementar uma tabela pra ficar mais facil adicionar mais comandos e dps fz a tabela de registradores.
-    {"MOV", "0001", 2},
-    {"MOV2", "0031", 2},
+    {"MOV", "00010000", 2},
     {"End", "", 0} // So pra saber quando essa porra terminou
 };
 // Funcoes ----
-int convertMnemonic(char* binary, int nParameters){ // Funcao que valida os parametros e escreve as instrucoes no arquivo binario
-    char* params[nParameters];
-
-    // Preenche o array dos parametros separando o que sobrou da linha utilizando "," como delimitador
-    for (int i=0; i<nParameters; i++){
-        params[i] = strtok(NULL, ","); 
-    }
-    if((strtok(NULL, ",") != NULL) || (params[nParameters-1] == NULL)){ // Gera erro caso o numero de parametros esteja errado
-        return 1;
-    }
-    fwrite(binary, sizeof(char), strlen(binary), binaryFile);
-    fwrite("\n", sizeof(char), 1, binaryFile); //Faz a quebra de linha
-
-    return 0;
-}
 int compileLine(char* line, int lineNumber){
     // Remover comentarios
     if(line[0] == ';'){ // Se a linha inteira for comentario
@@ -62,11 +46,22 @@ int compileLine(char* line, int lineNumber){
                 printf("Erro nos parametros!. Linha %i\n", lineNumber);
                 error = 1;
             }
-            //
+            
+            // Escrita no arquivo binario
             fwrite(opcode, sizeof(char), strlen(opcode), binaryFile);
             fwrite("\n", sizeof(char), 1, binaryFile); //Faz a quebra de linha
+            
+            for(int j=0; j<nParameters; j++){ // Escreve os parametros em linhas novas
+                if(parameters[j]!= NULL){
+                    fwrite(parameters[j], sizeof(char), strlen(parameters[j]),binaryFile);
+                }
+                else{
+                    fwrite("invP", sizeof(char), 4,binaryFile);
+                }
+                fwrite("\n", sizeof(char), 1, binaryFile);
+            }
 
-        }else if(strcmp(opcodes[i].opcode, "End") == 0){ // Caso nao encontre o mnemonico
+        }else if(strcmp(opcodes[i].mnemonic, "End") == 0){ // Caso nao encontre o mnemonico
             printf("Erro ao ler mnemonico!. Linha %i: \"%s\" \n",lineNumber, mnemonic);
             i = -2; // Quebra do while
             error = 1;
@@ -98,7 +93,6 @@ int main(){
         compileLine(buffer, lineNumber); // Retorna 1 caso a linha seja compilada com sucesso e 0 se tiver algum erro.
         lineNumber = lineNumber + 1;
     }
-    
     if(error){
         printf("Compilacao Finalizada com Problemas.. :(");
     }else{
