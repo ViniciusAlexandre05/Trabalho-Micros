@@ -11,6 +11,15 @@ architecture Test_Logic of tb_Flag_Register is
         port (
             clk     : in std_logic;
             rst     : in std_logic;
+            -- NOVAS PORTAS DE CARGA (LOAD/ENABLE)
+            LD_ZF   : in std_logic;
+            LD_CF   : in std_logic;
+            LD_SF   : in std_logic;
+            LD_PF   : in std_logic;
+            LD_IF   : in std_logic;
+            LD_DF   : in std_logic;
+            LD_OF   : in std_logic;
+            -- Portas de DADOS (MANTIDAS)
             set_ZF  : in std_logic;
             set_CF  : in std_logic;
             set_SF  : in std_logic;
@@ -24,6 +33,17 @@ architecture Test_Logic of tb_Flag_Register is
 
     signal CLK_TB  : std_logic := '0';
     signal RST_TB  : std_logic := '0';
+    
+    -- NOVOS SINAIS DE CONTROLE PARA AS PORTAS LD_XF
+    signal LD_ZF_TB  : std_logic := '0';
+    signal LD_CF_TB  : std_logic := '0';
+    signal LD_SF_TB  : std_logic := '0';
+    signal LD_PF_TB  : std_logic := '0';
+    signal LD_IF_TB  : std_logic := '0';
+    signal LD_DF_TB  : std_logic := '0';
+    signal LD_OF_TB  : std_logic := '0';
+    
+    -- Sinais de Dados (Mantidos)
     signal SET_ZF_TB  : std_logic := '0';
     signal SET_CF_TB  : std_logic := '0';
     signal SET_SF_TB  : std_logic := '0';
@@ -42,6 +62,15 @@ begin
         port map (
             clk     => CLK_TB,
             rst     => RST_TB,
+            -- Mapeamento das Novas Portas LD_XF
+            LD_ZF   => LD_ZF_TB,
+            LD_CF   => LD_CF_TB,
+            LD_SF   => LD_SF_TB,
+            LD_PF   => LD_PF_TB,
+            LD_IF   => LD_IF_TB,
+            LD_DF   => LD_DF_TB,
+            LD_OF   => LD_OF_TB,
+            -- Mapeamento das Portas de Dados
             set_ZF  => SET_ZF_TB,
             set_CF  => SET_CF_TB,
             set_SF  => SET_SF_TB,
@@ -52,7 +81,7 @@ begin
             R_FLAGS => R_FLAGS_TB
         );
 
-    -- Clock finito %%%%%%%%%%%%%%%%
+    -- Gerador de Clock
     CLK_GEN: process
     begin
         for i in 1 to 50 loop
@@ -64,45 +93,65 @@ begin
         wait;
     end process;
 
-    -- Vetores de teste
     TEST_VECTORS: process
     begin
-        report "--- INICIANDO SIMULACAO ---" severity note;
+        report "--- INICIANDO SIMULACAO (TESTE SELETIVO) ---" severity note;
 
-        -- Reset
-        report "Ciclo 1: Ativando Reset..." severity note;
+        -- 1. Reset
         RST_TB <= '1';
         wait for CLK_PERIOD;
         RST_TB <= '0';
+        assert R_FLAGS_TB = "0000000" report "FALHA: Reset não zerou flags" severity error;
 
-        assert R_FLAGS_TB = "0000000"
-        report "FALHA: Reset não zerou flags" severity error;
-
-        -- ZF e CF
-        SET_ZF_TB <= '1';
-        SET_CF_TB <= '1';
+        -- 2. Escrita Inicial: Setar apenas o Carry Flag (CF) e o Sign Flag (SF)
+        report "Ciclo 2: Setando CF (Bit 5) e SF (Bit 4)." severity note;
+        
+        -- Habilita SÓ CF e SF
+        LD_CF_TB  <= '1'; LD_SF_TB  <= '1';
+        
+        -- Define os valores
+        SET_CF_TB <= '1'; SET_SF_TB <= '1';
+        -- SET_ZF_TB, SET_PF_TB, etc., estão em '0' (mas LD_XF_TB = '0', então não são escritos)
+        
         wait for CLK_PERIOD;
 
-        assert R_FLAGS_TB = "1100000"
-        report "FALHA: ZF/CF incorretos" severity error;
+        -- Desabilita escrita
+        LD_CF_TB  <= '0'; LD_SF_TB  <= '0';
+        
+        -- R_FLAGS deve ser "0110000" (CF e SF ativos)
+        assert R_FLAGS_TB = "0110000" report "FALHA: Escrita inicial seletiva incorreta" severity error;
 
-        -- SF, PF, OF
-        SET_ZF_TB <= '0'; SET_CF_TB <= '0';
-        SET_SF_TB <= '1'; SET_PF_TB <= '1'; SET_OF_TB <= '1';
+        -- 3. Teste de Manutenção (A Prova): Tenta mudar ZF para '1', mas mantém LD_ZF='0'
+        report "Ciclo 3: Tenta mudar ZF para '1', mas mantem LD_ZF='0'. Flags devem ser mantidos." severity note;
+        
+        SET_ZF_TB <= '1'; -- O dado que queremos escrever é '1'
+        LD_ZF_TB  <= '0'; -- O load está DESABILITADO
+        
+        -- Todos os outros LD_XF também estão em '0', então CF e SF devem permanecer '1'
+        
         wait for CLK_PERIOD;
 
-        assert R_FLAGS_TB = "0011001"
-        report "FALHA: SF/PF/OF incorretos" severity error;
+        -- O resultado deve ser o mesmo: "0110000"
+        assert R_FLAGS_TB = "0110000" report "FALHA: Teste de Manutencao falhou (ZF mudou)" severity error;
+        
+        SET_ZF_TB <= '0'; -- Volta dado para '0'
 
-        -- IF e DF
-        SET_SF_TB <= '0'; SET_PF_TB <= '0'; SET_OF_TB <= '0';
-        SET_IF_TB <= '1'; SET_DF_TB <= '1';
+        -- 4. Teste de Escrita Seletiva 2: Mudar apenas o ZF para '1', mantendo CF e SF.
+        report "Ciclo 4: Habilita ZF para '1'. CF e SF devem ser mantidos '1'." severity note;
+        
+        LD_ZF_TB  <= '1';  -- Habilita escrita do ZF
+        SET_ZF_TB <= '1';  -- Novo valor do ZF
+        
+        -- LD_CF_TB e LD_SF_TB permanecem em '0'
+        
         wait for CLK_PERIOD;
 
-        assert R_FLAGS_TB = "0000110"
-        report "FALHA: IF/DF incorretos" severity error;
+        LD_ZF_TB  <= '0';
+        
+        -- R_FLAGS deve ser ZF='1', CF='1', SF='1'. R_FLAGS = "1110000"
+        assert R_FLAGS_TB = "1110000" report "FALHA: ZF incorreto OU CF/SF nao foram mantidos" severity error;
 
-        report "--- SIMULACAO CONCLUIDA ---" severity note;
+        report "--- SIMULACAO CONCLUIDA: Escrita Seletiva OK ---" severity note;
         wait;
     end process;
 
