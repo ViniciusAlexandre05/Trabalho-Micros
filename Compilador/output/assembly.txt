@@ -1,2 +1,0 @@
-MOV R0,[00001111]   ;DjegJhonsons
-MOV R0,#00001111
