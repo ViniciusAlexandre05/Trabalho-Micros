@@ -22,10 +22,33 @@ typedef struct {
 } RegInfo;
 
 OpcodeInfo opcodes[] = { // TODO ia implementar uma tabela pra ficar mais facil adicionar mais comandos e dps fz a tabela de registradores.
-    {"MOV", "00000000", 2, 'R','R'}, // R = register, M = memory, V = imediato, N = NULL (nao possui 2 parametro)
-    {"MOV", "00000001", 2, 'R','M'},
-    {"MOV", "00000010", 2, 'M','R'},
-    {"MOV", "00000011", 2, 'R','V'},
+    // Controle
+    {"NOP", "00000000", 0, 'N','N'}, // R = register, M = memory, V = imediato, N = NULL (nao possui 2 parametro)
+    {"HALT", "00000001", 0, 'N','N'},
+    // Memoria/mov
+    {"MOV", "00010000", 2, 'R','R'},
+    {"MOV", "00010001", 2, 'V','R'},
+    {"LOAD", "00010010", 2, 'M','R'},
+    {"STORE", "00010011", 2, 'R','M'},
+    // Aritmetica
+    {"ADD", "01000000", 2, 'R','R'},
+    {"ADD", "01010000", 2, 'V','R'},
+    {"SUB", "01000001", 2, 'R','R'},
+    {"SUB", "01010001", 2, 'V','R'},
+    {"MUL", "01000010", 2, 'R','R'},
+    {"DIV", "01000011", 2, 'R','R'},
+    {"MOD", "01000100", 2, 'R','R'},
+    {"INC", "01000101", 1, 'R','N'},
+    {"DEC", "01000110", 1, 'R','N'},
+    // Logica
+    {"AND", "01100000", 2, 'R','R'},
+    {"AND", "01101000", 2, 'V','R'},
+    {"OR", "01100001", 2, 'R','R'},
+    {"NOT", "01100010", 1, 'R','N'},
+    {"XOR", "01100011", 2, 'R','R'},
+    {"NAND", "01100100", 2, 'R','R'},
+    {"NOR", "01100101", 2, 'R','R'},
+    {"XNOR", "01100110", 2, 'R','R'},
     {"End", "", 0} // So pra saber quando essa porra terminou
 };
 
