@@ -23,12 +23,10 @@ entity control_unit is
         -- Controle do Shifter
         shifter_ctrl_out  : out std_logic_vector(1 downto 0); 
 
-        -- Controle do MUX de escrita
+        -- Controle do MUX de WriteBack
         reg_write_src_sel : out std_logic_vector(1 downto 0); 
-        
-        --Controle MUX para registrados de saída
+        reg_write_addr : out std_logic_vector(1 downto 0);
 
-        
         -- Saídas de Carga dos Flags
         ld_alu_flags_out  : out std_logic;
         ld_shf_flags_out  : out std_logic;
@@ -133,25 +131,26 @@ begin
 
     process (state, opcode_in)
     begin
-        --setta valores padrão
-        pc_en         <= '0';
-        ir_load_en    <= '0';
-        rf_write_en   <= '0';
-        alu_op        <= "00000"; 
-        alu_src_b_sel <= '0';
-        halt_out      <= '0'; 
-        shifter_ctrl_out  <= "00";
-        reg_write_src_sel <= "00";
-        ld_alu_flags_out  <= '0';
-        ld_shf_flags_out  <= '0';
 
         case state is
-            when S_FETCH => --pc e ir en para acrescentar
+            when S_FETCH => --pc e ir en para acrescentar + padrão dos sinais de exe e wb
                 pc_en      <= '1';
                 ir_load_en <= '1';
 
-            when S_DECODE => --nada, seria no caso de guardar variável a ser usada no execute
-                null; 
+                rf_write_en   <= '0';
+                alu_op        <= "00000"; 
+                alu_src_b_sel <= '0';
+                halt_out      <= '0'; 
+                shifter_ctrl_out  <= "00";
+                reg_write_src_sel <= "00";
+                ld_alu_flags_out  <= '0';
+                ld_shf_flags_out  <= '0';
+                reg_write_addr <= "00";
+
+            when S_DECODE => --volta para padrão os sinais de fetch
+                pc_en      <= '0';
+                ir_load_en <= '0';
+
 
             when S_EXECUTE =>
                 case opcode_in is --Verifica se B imediato ou registrador (controla MUX)
@@ -202,11 +201,17 @@ begin
             when S_WRITEBACK =>
                 rf_write_en <= '1'; --Permite escrita nos registradores
 
-                case opcode_in is --Controla MUX de WB (saída vem da ALU ou do SHIFTER)
+                case opcode_in is --Controla MUX de WB (saída vem da ALU: 00 ou SHIFTER: 01)
                     when OP_SHL | OP_SHR =>
                         reg_write_src_sel <= "01";
+                        reg_write_addr <= A(1 downto 0);
+                    
+                    when OP_MOV_REG | OP_MOV_IMM | OP_PASS_B =>
+                        reg_write_src_sel <= "00";
+                        reg_write_addr <= A(1 downto 0);
                     when others =>
                         reg_write_src_sel <= "00";
+                        reg_write_addr <= "11";
                 end case;
 
             when S_HALT => --Sinal de HALT
