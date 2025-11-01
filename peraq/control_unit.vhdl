@@ -26,25 +26,34 @@ entity control_unit is
         -- Controle do MUX de escrita
         reg_write_src_sel : out std_logic_vector(1 downto 0); 
         
+        --Controle MUX para registrados de saída
+
+        
         -- Saídas de Carga dos Flags
         ld_alu_flags_out  : out std_logic;
         ld_shf_flags_out  : out std_logic;
         
         -- Controle do Processador
-        halt_out    : out std_logic
+        halt_out    : out std_logic -- indica que CU em estado halt
     );
 end entity control_unit;
 
 architecture fsm of control_unit is
+
+    -- Cria tipo "estado"
     type state_type is (
         S_RESET, S_FETCH, S_DECODE, S_EXECUTE, S_WRITEBACK, S_HALT
     );
-    signal state : state_type;
+
+    signal state : state_type; -- sinal do estado
+
+    -- Macros: opcode de shifter e nop
     constant OP_NOP     : std_logic_vector(7 downto 0) := x"00";
     constant OP_HALT    : std_logic_vector(7 downto 0) := x"01";
     constant OP_MOV_REG : std_logic_vector(7 downto 0) := x"10";
     constant OP_MOV_IMM : std_logic_vector(7 downto 0) := x"11";
     
+    --Macros: opcode de ULA
     constant OP_ADD     : std_logic_vector(7 downto 0) := x"40";
     constant OP_SUB     : std_logic_vector(7 downto 0) := x"41";
     constant OP_AND     : std_logic_vector(7 downto 0) := x"42";
@@ -68,6 +77,7 @@ architecture fsm of control_unit is
     constant OP_CMP_REG : std_logic_vector(7 downto 0) := x"78";
     constant OP_CMP_IMM : std_logic_vector(7 downto 0) := x"79";
 
+    --Macros: operações da ula
     constant ALU_OP_ADD    : std_logic_vector(4 downto 0) := "00000";
     constant ALU_OP_SUB    : std_logic_vector(4 downto 0) := "00001";
     constant ALU_OP_CMP    : std_logic_vector(4 downto 0) := "00010";
@@ -84,31 +94,38 @@ begin
     
     process (clk, reset)
     begin
-        if reset = '1' then
+        if reset = '1' then --reset assíncrono, entra em estado de reset
             state <= S_RESET;
-        elsif rising_edge(clk) then
+        
+        elsif rising_edge(clk) then 
             case state is
-                when S_RESET => 
+                when S_RESET => --saí de reset para fetch (só se não estive reset = 1)
                     state <= S_FETCH;
-                when S_FETCH => 
+
+                when S_FETCH => --direto para decode
                     state <= S_DECODE;
+
                 when S_DECODE =>
-                    if opcode_in = OP_HALT then 
+                    if opcode_in = OP_HALT then -- vai p/ halt caso opcode de halt
                         state <= S_HALT;
                     else
-                        state <= S_EXECUTE;
+                        state <= S_EXECUTE; --Execute em qualquer outro caso
                     end if;
+
                 when S_EXECUTE =>
-                    case opcode_in is
+                    case opcode_in is --Opcodes que não precisam de writeback
                         when OP_CMP | OP_CMP_IMM | OP_CMP_REG |
                              OP_NOP | OP_HALT =>
                             state <= S_FETCH;
-                        when others => 
+
+                        when others => -- Vai para WB em outros casos
                             state <= S_WRITEBACK;
                     end case;
-                when S_WRITEBACK => 
+
+                when S_WRITEBACK => --Direto para fetch
                     state <= S_FETCH;
-                when S_HALT => 
+
+                when S_HALT => --Continua em halt
                     state <= S_HALT;
             end case;
         end if;
@@ -116,32 +133,36 @@ begin
 
     process (state, opcode_in)
     begin
+        --setta valores padrão
         pc_en         <= '0';
         ir_load_en    <= '0';
         rf_write_en   <= '0';
         alu_op        <= "00000"; 
         alu_src_b_sel <= '0';
-        halt_out      <= '0';
+        halt_out      <= '0'; 
         shifter_ctrl_out  <= "00";
         reg_write_src_sel <= "00";
         ld_alu_flags_out  <= '0';
         ld_shf_flags_out  <= '0';
 
         case state is
-            when S_FETCH =>
+            when S_FETCH => --pc e ir en para acrescentar
                 pc_en      <= '1';
                 ir_load_en <= '1';
-            when S_DECODE =>
+
+            when S_DECODE => --nada, seria no caso de guardar variável a ser usada no execute
                 null; 
+
             when S_EXECUTE =>
-                case opcode_in is
+                case opcode_in is --Verifica se B imediato ou registrador (controla MUX)
                     when OP_MOV_IMM | OP_ADD_IMM | OP_SUB_IMM | 
                          OP_AND_IMM | OP_OR_IMM | OP_XOR_IMM | OP_CMP_IMM =>
                         alu_src_b_sel <= '1';
                     when others =>
                         alu_src_b_sel <= '0';
                 end case;
-                case opcode_in is
+
+                case opcode_in is --Operação a ser passada para ula TODO testar todas operações
                     when OP_ADD | OP_ADD_IMM => alu_op <= ALU_OP_ADD;
                     when OP_SUB | OP_SUB_IMM => alu_op <= ALU_OP_SUB;
                     when OP_AND | OP_AND_IMM => alu_op <= ALU_OP_AND;
@@ -156,35 +177,43 @@ begin
                     when OP_SHL | OP_SHR    => alu_op <= "00000";
                     when others             => alu_op <= "00000";
                 end case;
-                case opcode_in is
+
+                case opcode_in is --Operação a ser passada para shifter
                     when OP_SHL => shifter_ctrl_out <= "01";
                     when OP_SHR => shifter_ctrl_out <= "10";
                     when others => shifter_ctrl_out <= "00";
                 end case;
-                case opcode_in is
+
+                case opcode_in is --Conrole de flag register (ALU ou SHIFTER)
                     when OP_ADD | OP_ADD_IMM | OP_SUB | OP_SUB_IMM |
                          OP_AND | OP_AND_IMM | OP_OR  | OP_OR_IMM  |
                          OP_XOR | OP_XOR_IMM | OP_NOT | OP_NAND |
                          OP_NOR | OP_XNOR |
                          OP_CMP | OP_CMP_REG | OP_CMP_IMM =>
-                        ld_alu_flags_out <= '1';
+                        ld_alu_flags_out <= '1'; --En flags alu
+
                     when OP_SHL | OP_SHR =>
-                        ld_shf_flags_out <= '1';
+                        ld_shf_flags_out <= '1'; --En flags shifter
+
                     when others =>
                         null;
                 end case;
+
             when S_WRITEBACK =>
-                rf_write_en <= '1';
-                case opcode_in is
+                rf_write_en <= '1'; --Permite escrita nos registradores
+
+                case opcode_in is --Controla MUX de WB (saída vem da ALU ou do SHIFTER)
                     when OP_SHL | OP_SHR =>
                         reg_write_src_sel <= "01";
                     when others =>
                         reg_write_src_sel <= "00";
                 end case;
-            when S_HALT =>
+
+            when S_HALT => --Sinal de HALT
                 halt_out <= '1';
+
             when others =>
-                null;
+                REPORT "CU entrou em um estado desconhecido";
         end case;
     end process;
 
