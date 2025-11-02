@@ -28,8 +28,8 @@ OpcodeInfo opcodes[] = { // TODO ia implementar uma tabela pra ficar mais facil 
     // Memoria/mov
     {"MOV", "00010000", 2, 'R','R'},
     {"MOV", "00010001", 2, 'R','V'},
-    {"LOAD", "00010010", 2, 'M','R'},
-    {"STORE", "00010011", 2, 'R','M'},
+    {"LOAD", "00010010", 2, 'M','R'}, // Nao vai ser implementado
+    {"STORE", "00010011", 2, 'R','M'}, // Nao vai ser implementado
     // Aritmetica
     {"ADD", "01000000", 2, 'R','R'},
     {"ADD", "01010000", 2, 'R','V'},
@@ -59,11 +59,11 @@ OpcodeInfo opcodes[] = { // TODO ia implementar uma tabela pra ficar mais facil 
     {"End", "", 0} // So pra saber quando essa porra terminou
 };
 
-RegInfo registers[] = {
-    {"R0", "00000000"},
-    {"R1", "00000001"},
-    {"R2", "00000010"},
-    {"R3", "00000011"},
+RegInfo registers[] = { // Alterado para 2 bits
+    {"R0", "00"},
+    {"R1", "01"},
+    {"R2", "10"},
+    {"R3", "11"},
     {"End", ""} // So pra saber quando essa porra terminou
 };
 // Funcoes ----
