@@ -17,13 +17,13 @@ ARCHITECTURE rtl OF Instruction_Register IS
     SIGNAL s_ir : STD_LOGIC_VECTOR(23 DOWNTO 0) := (OTHERS => '0');
 BEGIN
 
-    process(clk, rst)
+    -- CORREÇÃO: Padronizado para Reset SÍNCRONO e RISING_EDGE
+    process(clk)
     begin
-        if rst = '1' then
-            s_ir <= (OTHERS => '0');
-            
-        elsif falling_edge(clk) then 
-            if ir_load_en = '1' then
+        if falling_edge(clk) then 
+            if rst = '1' then
+                s_ir <= (OTHERS => '0');
+            elsif ir_load_en = '1' then
                 s_ir <= data_in;
             end if;
         end if;

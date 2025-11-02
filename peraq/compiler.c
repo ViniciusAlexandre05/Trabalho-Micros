@@ -21,42 +21,46 @@ typedef struct {
     char* address;
 } RegInfo;
 
-OpcodeInfo opcodes[] = { // TODO ia implementar uma tabela pra ficar mais facil adicionar mais comandos e dps fz a tabela de registradores.
+OpcodeInfo opcodes[] = {
+    // Mnemônico, Opcode Binário, N_Params, TipoP1, TipoP2
+    // (Estes opcodes AGORA batem com control_unit.vhd)
+
     // Controle
-    {"NOP", "00000000", 0, 'N','N'}, // R = register, M = memory, V = imediato, N = NULL (nao possui 2 parametro)
-    {"HALT", "00000001", 0, 'N','N'},
+    {"NOP",     "00000000", 0, 'N','N'}, // x"00"
+    {"HALT",    "00000001", 0, 'N','N'}, // x"01"
+    
     // Memoria/mov
-    {"MOV", "00010000", 2, 'R','R'},
-    {"MOV", "00010001", 2, 'R','V'},
-    {"LOAD", "00010010", 2, 'M','R'},
-    {"STORE", "00010011", 2, 'R','M'},
+    {"MOV",     "00010000", 2, 'R','R'}, // x"10" (OP_MOV_REG)
+    {"MOV",     "00010001", 2, 'R','V'}, // x"11" (OP_MOV_IMM)
+    // LOAD/STORE não implementados no VHDL
+    // {"LOAD", "00010010", 2, 'M','R'},
+    // {"STORE", "00010011", 2, 'R','M'}, 
+    
     // Aritmetica
-    {"ADD", "01000000", 2, 'R','R'},
-    {"ADD", "01010000", 2, 'R','V'},
-    {"SUB", "01000001", 2, 'R','R'},
-    {"SUB", "01010001", 2, 'R','V'},
-    {"MUL", "01000010", 2, 'R','R'},
-    {"DIV", "01000011", 2, 'R','R'},
-    {"MOD", "01000100", 2, 'R','R'},
-    {"INC", "01000101", 1, 'R','N'},
-    {"DEC", "01000110", 1, 'R','N'},
+    {"ADD",     "01000000", 2, 'R','R'}, // x"40" (OP_ADD)
+    {"ADD",     "01010000", 2, 'R','V'}, // x"50" (OP_ADD_IMM)
+    {"SUB",     "01000001", 2, 'R','R'}, // x"41" (OP_SUB)
+    {"SUB",     "01010001", 2, 'R','V'}, // x"51" (OP_SUB_IMM)
+    
     // Logica
-    {"AND", "01100000", 2, 'R','R'},
-    {"AND", "01101000", 2, 'R','V'},
-    {"OR", "01100001", 2, 'R','R'},
-    {"OR", "01101001", 2, 'R','V'},
-    {"NOT", "01100010", 1, 'R','N'},
-    {"XOR", "01100011", 2, 'R','R'},
-    {"XOR", "01101010", 2, 'R','V'},
-    {"NAND", "01100100", 2, 'R','R'},
-    {"NOR", "01100101", 2, 'R','R'},
-    {"XNOR", "01100110", 2, 'R','R'},
+    {"AND",     "01000010", 2, 'R','R'}, // x"42" (OP_AND)
+    {"AND",     "01100010", 2, 'R','V'}, // x"62" (OP_AND_IMM)
+    {"OR",      "01000011", 2, 'R','R'}, // x"43" (OP_OR)
+    {"OR",      "01100011", 2, 'R','V'}, // x"63" (OP_OR_IMM)
+    {"NOT",     "01000101", 1, 'R','N'}, // x"45" (OP_NOT)
+    {"XOR",     "01000100", 2, 'R','R'}, // x"44" (OP_XOR)
+    {"XOR",     "01100100", 2, 'R','V'}, // x"64" (OP_XOR_IMM)
+    {"NAND",    "01001000", 2, 'R','R'}, // x"48" (OP_NAND)
+    {"NOR",     "01001001", 2, 'R','R'}, // x"49" (OP_NOR)
+    {"XNOR",    "01001010", 2, 'R','R'}, // x"4A" (OP_XNOR)
+    
     // Shift/Bit
-    {"SHL", "01110000", 1, 'R','N'},
-    {"SHR", "01110001", 1, 'R','N'},
-    {"CMP", "01111000", 2, 'R','R'},
-    {"CMP", "01111001", 2, 'R','V'},
-    {"End", "", 0} // So pra saber quando essa porra terminou
+    {"SHL",     "01110000", 1, 'R','N'}, // x"70" (OP_SHL)
+    {"SHR",     "01110001", 1, 'R','N'}, // x"71" (OP_SHR)
+    {"CMP",     "01111000", 2, 'R','R'}, // x"78" (OP_CMP_REG)
+    {"CMP",     "01111001", 2, 'R','V'}, // x"79" (OP_CMP_IMM)
+    
+    {"End", "", 0, 'N', 'N'} // Fim da tabela
 };
 
 RegInfo registers[] = {
