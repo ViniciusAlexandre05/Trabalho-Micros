@@ -94,11 +94,11 @@ BEGIN
             WHEN OTHERS => temp_resultado := (OTHERS => 'X'); temp_flags := (OTHERS => 'X');
         END CASE;
         
-        temp_flags(2) := temp_resultado(7); -- SF
-        IF UNSIGNED(temp_resultado) = 0 THEN temp_flags(4) := '1'; END IF; -- ZF
+        temp_flags(2) := temp_resultado(7); --sinal
+        IF UNSIGNED(temp_resultado) = 0 THEN temp_flags(4) := '1'; END IF; --zero
         temp_PF := '0';
         FOR i IN 0 TO 7 LOOP temp_PF := temp_PF XOR temp_resultado(i); END LOOP;
-        temp_flags(0) := NOT temp_PF; -- PF
+        temp_flags(0) := NOT temp_PF; --paridade
 
         Resultado <= temp_resultado;
         Flags     <= temp_flags;

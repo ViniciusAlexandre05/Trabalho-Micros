@@ -22,7 +22,6 @@ architecture reg of regfile is
 begin
     process(clk)
     begin
-        -- CORREÇÃO: Mudado de falling_edge para RISING_EDGE
         if rising_edge(clk) then
             if rst = '1' then
                 regs <= (others => (others => '0')); 

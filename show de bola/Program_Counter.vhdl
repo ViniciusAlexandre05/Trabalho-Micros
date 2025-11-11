@@ -6,9 +6,9 @@ ENTITY Program_Counter IS
     PORT (
         clk        : IN  STD_LOGIC;
         rst        : IN  STD_LOGIC;
-        pc_en      : IN  STD_LOGIC; -- Habilita incremento
-        pc_load_en : IN  STD_LOGIC; -- Habilita carga (Jump)
-        data_in    : IN  UNSIGNED(7 DOWNTO 0); -- Novo endereço (para Jump)
+        pc_en      : IN  STD_LOGIC;
+        pc_load_en : IN  STD_LOGIC; --não usado
+        data_in    : IN  UNSIGNED(7 DOWNTO 0); -- não usado
         pc_out     : OUT UNSIGNED(7 DOWNTO 0)
     );
 END Program_Counter;
@@ -19,7 +19,6 @@ BEGIN
     
     process(clk)
     begin
-        -- CORREÇÃO: Padronizado para Reset SÍNCRONO e RISING_EDGE
         if falling_edge(clk) then 
             if rst = '1' then
                 s_pc <= (OTHERS => '0');

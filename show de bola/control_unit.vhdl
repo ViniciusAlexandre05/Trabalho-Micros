@@ -2,8 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
--- UNIDADE DE CONTROLE (VERSÃO HÍBRIDA)
--- Correção: Destino é Op1 para MOV, mas R3 para todas as outras operações.
+-- UNIDADE DE CONTROLE
 entity control_unit is
     port (
         -- Entradas
@@ -11,7 +10,7 @@ entity control_unit is
         reset       : in  std_logic;
         opcode_in   : in  std_logic_vector(7 downto 0); 
         flags_in    : in  std_logic_vector(6 downto 0);
-        A           : in  std_logic_vector(7 downto 0); -- ADICIONADO (Vem do IR.op1_out)
+        A           : in  std_logic_vector(7 downto 0);
         
         -- Saídas de Controle
         pc_en       : out std_logic;
@@ -19,15 +18,15 @@ entity control_unit is
         rf_write_en : out std_logic;
         reg_write_addr : out std_logic_vector(1 downto 0); -- ADICIONADO
 
-        -- Controle da ALU
+        -- ALU
         alu_op      : out std_logic_vector(4 downto 0);
         alu_src_b_sel : out std_logic;
 
-        -- Controle do Shifter
+        -- Shifter
         shifter_ctrl_out  : out std_logic_vector(1 downto 0);
         reg_write_src_sel : out std_logic;
         
-        -- Controle de Carga dos Flags
+        -- Flags
         ld_alu_flags_out  : out std_logic;
         ld_shf_flags_out  : out std_logic;
         halt_out          : out std_logic
@@ -41,7 +40,6 @@ architecture fsm of control_unit is
     );
     signal state : state_type; 
     
-    -- (Macros de Opcode e ALU OMITIDAS POR BREVIDADE)
     constant OP_NOP     : std_logic_vector(7 downto 0) := x"00";
     constant OP_HALT    : std_logic_vector(7 downto 0) := x"01";
     constant OP_MOV_REG : std_logic_vector(7 downto 0) := x"10";
@@ -80,7 +78,6 @@ architecture fsm of control_unit is
 
 begin
     
-    -- Processo 1: Lógica Síncrona (Reset Síncrono e rising_edge)
     process (clk)
     begin
         if rising_edge(clk) then 
@@ -108,14 +105,14 @@ begin
         end if;
     end process;
 
-    -- Processo 2: Lógica Combinacional
-    process (state, opcode_in, A) -- A (Op1) adicionado à sensibilidade
+    -- Datapath
+    process (state, opcode_in, A) 
     begin
-        -- Valores Padrão
+        -- Padrão
         pc_en       <= '0';
         ir_load_en  <= '0';
         rf_write_en <= '0';
-        reg_write_addr <= "00"; -- Padrão
+        reg_write_addr <= "00";
         alu_op      <= "00000"; 
         alu_src_b_sel <= '0'; 
         shifter_ctrl_out  <= "00"; 
@@ -135,7 +132,7 @@ begin
                 pc_en <= '1'; 
 
             when S_EXECUTE =>
-                -- Lógica do Datapath (para Flags)
+                -- Para flags
                 case opcode_in is
                     when OP_MOV_IMM | OP_ADD_IMM | OP_SUB_IMM | 
                          OP_AND_IMM | OP_OR_IMM | OP_XOR_IMM | OP_CMP_IMM =>
@@ -165,7 +162,6 @@ begin
                     when others => shifter_ctrl_out <= "00";
                 end case;
                 
-                -- Lógica de Carga dos Flags
                 case opcode_in is
                     when OP_ADD | OP_ADD_IMM | OP_SUB | OP_SUB_IMM |
                          OP_AND | OP_AND_IMM | OP_OR  | OP_OR_IMM  |
@@ -180,12 +176,8 @@ begin
                 end case;
             
             when S_WRITEBACK =>
-                -- Ativa a escrita
                 rf_write_en <= '1'; 
                 
-                -- ==========================================================
-                -- CORREÇÃO: Lógica de seleção do endereço de destino
-                -- ==========================================================
                 case opcode_in is
                     when OP_MOV_REG | OP_MOV_IMM =>
                         reg_write_addr <= A(1 downto 0); -- Destino é Op1
@@ -193,7 +185,7 @@ begin
                         reg_write_addr <= "11";          -- Destino é R3
                 end case;
                 
-                -- Lógica do Datapath (Duplicada)
+                -- Datapath (operações normais)
                 case opcode_in is
                     when OP_MOV_IMM | OP_ADD_IMM | OP_SUB_IMM | 
                          OP_AND_IMM | OP_OR_IMM | OP_XOR_IMM | OP_CMP_IMM =>

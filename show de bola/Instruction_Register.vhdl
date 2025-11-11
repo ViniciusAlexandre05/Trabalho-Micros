@@ -15,9 +15,8 @@ END Instruction_Register;
 
 ARCHITECTURE rtl OF Instruction_Register IS
     SIGNAL s_ir : STD_LOGIC_VECTOR(23 DOWNTO 0) := (OTHERS => '0');
+    
 BEGIN
-
-    -- CORREÇÃO: Padronizado para Reset SÍNCRONO e RISING_EDGE
     process(clk)
     begin
         if falling_edge(clk) then 

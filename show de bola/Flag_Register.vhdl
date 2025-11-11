@@ -19,26 +19,25 @@ BEGIN
 
     process(clk)
     begin
-        -- CORREÇÃO: Mudado de falling_edge para RISING_EDGE
         if rising_edge(clk) then
             if rst = '1' then
                 flags_s <= (OTHERS => '0');
             
             elsif ld_alu_flags = '1' then
-                -- Mapeamento da ULA: (4=ZF, 3=CF, 2=SF, 1=OF, 0=PF)
-                flags_s(6) <= alu_flags_in(4); -- ZF
-                flags_s(5) <= alu_flags_in(3); -- CF
-                flags_s(4) <= alu_flags_in(2); -- SF
-                flags_s(3) <= alu_flags_in(0); -- PF
-                flags_s(0) <= alu_flags_in(1); -- OF
+                -- Mapeamento: (4=ZF, 3=CF, 2=SF, 1=OF, 0=PF)
+                flags_s(6) <= alu_flags_in(4);
+                flags_s(5) <= alu_flags_in(3);
+                flags_s(4) <= alu_flags_in(2);
+                flags_s(3) <= alu_flags_in(0);
+                flags_s(0) <= alu_flags_in(1);
             
             elsif ld_shf_flags = '1' then
-                -- Mapeamento do Shifter: (3=ZF, 2=SF, 1=PF, 0=CF)
-                flags_s(6) <= shf_flags_in(3); -- ZF
-                flags_s(5) <= shf_flags_in(0); -- CF
-                flags_s(4) <= shf_flags_in(2); -- SF
-                flags_s(3) <= shf_flags_in(1); -- PF
-                flags_s(0) <= '0';             -- Shifter não afeta OF
+                -- Mapeamento: (3=ZF, 2=SF, 1=PF, 0=CF)
+                flags_s(6) <= shf_flags_in(3);
+                flags_s(5) <= shf_flags_in(0);
+                flags_s(4) <= shf_flags_in(2); 
+                flags_s(3) <= shf_flags_in(1); 
+                flags_s(0) <= '0';             
             end if;
         end if;
     end process;
